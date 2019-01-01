@@ -1,9 +1,11 @@
 %% Setup
 clc;
+close all;
 ds = 2; % 0: KITTI, 1: Malaga, 2: parking
 
 if ds == 0
     % need to set kitti_path to folder containing "00" and "poses"
+    kitti_path = '../kitti';
     assert(exist('kitti_path', 'var') ~= 0);
     ground_truth = load([kitti_path '/poses/00.txt']);
     ground_truth = ground_truth(:, [end-8 end]);
@@ -13,6 +15,7 @@ if ds == 0
         0 0 1];
 elseif ds == 1
     % Path containing the many files of Malaga 7.
+    malaga_path = '../malaga-urban-dataset-extract-07';
     assert(exist('malaga_path', 'var') ~= 0);
     images = dir([malaga_path ...
         '/malaga-urban-dataset-extract-07_rectified_800x600_Images']);
@@ -35,42 +38,63 @@ else
 end
 
 %% Bootstrap
-% need to set bootstrap_frames
 clc;
-bootstrap_frames = zeros(2, 1);
+close all;
 if ds == 0
-    img0 = imread([kitti_path '/00/image_0/' ...
-        sprintf('%06d.png',bootstrap_frames(1))]);
+    path = kitti_path;
+    frame0 = 1;
+    max_frame = 10;
+    [frame1, S0, S1, Twc1] = bootstrap(ds, path, [], frame0, max_frame, K);
+
     img1 = imread([kitti_path '/00/image_0/' ...
-        sprintf('%06d.png',bootstrap_frames(2))]);
-elseif ds == 1
-    img0 = rgb2gray(imread([malaga_path ...
-        '/malaga-urban-dataset-extract-07_rectified_800x600_Images/' ...
-        left_images(bootstrap_frames(1)).name]));
-    img1 = rgb2gray(imread([malaga_path ...
-        '/malaga-urban-dataset-extract-07_rectified_800x600_Images/' ...
-        left_images(bootstrap_frames(2)).name]));
-elseif ds == 2
-    bootstrap_frames(1) = 1;
-    bootstrap_frames(2) = 3;
-    img0 = rgb2gray(imread([parking_path ...
-        sprintf('/images/img_%05d.png',bootstrap_frames(1))]));
-    img1 = rgb2gray(imread([parking_path ...
-        sprintf('/images/img_%05d.png',bootstrap_frames(2))]));
-    [S0, S1, Twc1] = distTriangulation(img0, img1, K);
+        sprintf('%06d.png',frame1)]);
     figure(1);
     imshow(img1);
     hold on;
     matches = 1 : size(S1.keypoints, 2);
     plotMatches(matches, S1.keypoints, S0.keypoints);
+    
+    frame1
     Twc1
-    S1.landmarks
+elseif ds == 1
+    path = malaga_path;
+    frame0 = 1;
+    max_frame = 10;
+    [frame1, S0, S1, Twc1] = bootstrap(ds, path, left_images, frame0, max_frame, K);
+
+    img1 = rgb2gray(imread([malaga_path ...
+        '/malaga-urban-dataset-extract-07_rectified_800x600_Images/' ...
+        left_images(frame1).name]));
+    figure(1);
+    imshow(img1);
+    hold on;
+    matches = 1 : size(S1.keypoints, 2);
+    plotMatches(matches, S1.keypoints, S0.keypoints);
+    
+    frame1
+    Twc1
+elseif ds == 2
+    path = parking_path;
+    frame0 = 1;
+    max_frame = 10;
+    [frame1, S0, S1, Twc1] = bootstrap(ds, path, [], frame0, max_frame, K);
+
+    img1 = rgb2gray(imread([parking_path ...
+         sprintf('/images/img_%05d.png',frame1)]));
+    figure(1);
+    imshow(img1);
+    hold on;
+    matches = 1 : size(S1.keypoints, 2);
+    plotMatches(matches, S1.keypoints, S0.keypoints);
+    
+    frame1
+    Twc1
 else
     assert(false);
 end
 
 %% Continuous operation
-range = (bootstrap_frames(2)+1):last_frame;
+range = (frame1+1):last_frame;
 for i = range
     fprintf('\n\nProcessing frame %d\n=====================\n', i);
     if ds == 0
