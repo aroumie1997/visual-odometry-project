@@ -16,4 +16,3 @@ dkpinv = Winv(:, end);
 keep = norm(delta_keypoint + dkpinv) < lambda;
 
 end
-

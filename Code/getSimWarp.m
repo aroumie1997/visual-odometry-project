@@ -8,4 +8,3 @@ R = [c -s; s c];
 W = lambda * [R [dx; dy]];
 
 end
-
