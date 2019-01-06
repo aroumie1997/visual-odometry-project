@@ -61,7 +61,7 @@ Or (`https`):
 
 _**Note:**_ The code prompts you to enter a number corresponding to the dataset you want to test.
 
-**Step 6 (Optional):** Run 'main_truthScale.m' in 'MATLAB'.
+**Step 6 (Optional):** Run `main_truthScale.m` in `MATLAB`.
 
 Runs version of implementation where translation scale between keyframes is synced with ground truth data.
 
