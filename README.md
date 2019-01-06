@@ -61,6 +61,12 @@ Or (`https`):
 
 _**Note:**_ The code prompts you to enter a number corresponding to the dataset you want to test.
 
+**Step 6 (Optional):** Run 'main_truthScale.m' in 'MATLAB'.
+
+Runs version of implementation where translation scale between keyframes is synced with ground truth data.
+
+_**Note:**_ The code prompts you to enter a number corresponding to the dataset you want to test. Malaga dataset is not allowed as it does not have ground truth data.
+
 ## References
 
 [1] [Vision Algorithms for Mobile Robotics Webpage](http://rpg.ifi.uzh.ch/teaching.html)
