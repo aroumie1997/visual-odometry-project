@@ -2,7 +2,7 @@
 clc;
 close all;
 clear all;
-ds = 2; % 0: KITTI, 1: Malaga, 2: parking
+ds = 0; % 0: KITTI, 1: Malaga, 2: parking
 % Screen size used to place plots
 screensize = get(groot, 'ScreenSize');
 screenwidth = screensize(3);
@@ -65,7 +65,8 @@ else
 end
 max_frame = 4;
 if ds ~= 1
-    [frame1, img1, S0, S1, Twc1] = bootstrapKLT(ds, path, [], frame0, max_frame, K);
+    [frame1, img1, S0, S1, Twc1] = bootstrapKLT_truthScale(...
+        ds, path, [], frame0, max_frame, K, ground_truth);
 else
     [frame1, img1, S0, S1, Twc1] = bootstrapKLT(ds, path, left_images, frame0, max_frame, K);
 end
@@ -149,8 +150,14 @@ for i = range
     fprintf('Number of tracking matches: %d\n=====================\n', num_track_matches);
     
     % Triangulate
-    [tri_keyframe_S, tri_S, tri_Twc] = ransacTriangulationDistRatioKLT(...
-        keyframe_keypoints, keypoints, keyframe_Twc, K);
+    if ds ~= 1
+        [tri_keyframe_S, tri_S, tri_Twc] = ransacTriangulationDistRatioKLT_truthScale(...
+            keyframe_keypoints, keypoints, keyframe_Twc, K,...
+            ground_truth(keyframe,:), ground_truth(i,:));
+    else
+        [tri_keyframe_S, tri_S, tri_Twc] = ransacTriangulationDistRatioKLT(...
+            keyframe_keypoints, keypoints, keyframe_Twc, K);
+    end
     num_tri_matches = size(tri_S.keypoints, 2);
     fprintf('Number of triangulation matches %d\n=====================\n', num_tri_matches);
     
