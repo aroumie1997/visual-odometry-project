@@ -1,4 +1,4 @@
-# Visual-Odometry-Project
+# Monocular Visual Odometry Project
 
 The aim of this mini-project is to implement a monocular VO (visual odometry) pipeline that can be used to estimate the trajectory of moving vehicles. Over the course of this project, some fundamental computer vision algorithms are implemented, particularly those which enable: initialization of 3D landmarks, keypoint tracking between two frames, pose estimation using established 2D-3D correspondences, and triangulation of new landmarks. These essential features of VO were presented in the lectures of the ETHZ/UZH course "Vision Algorithms for Mobile Robotics" and some of them were implemented as building blocks during the exercise sessions. The pipeline builds upon those building blocks, and the result is a fully-functional monocular VO algorithm.
 
