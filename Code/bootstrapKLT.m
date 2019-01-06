@@ -12,6 +12,12 @@ elseif ds == 1
 elseif ds == 2
     img0 = rgb2gray(imread([path ...
         sprintf('/images/img_%05d.png',frame0)]));
+elseif ds == 3
+    img0 = imread([path ...
+        sprintf('/images_grey_undistorted_cropped/IMG_%04d.jpg',frame0)]);
+elseif ds == 4
+    img0 = imread([path ...
+        sprintf('/images_grey_undistorted/IMG_%04d.png',frame0)]);
 end
 
 % First image coordinate frame is selected as world coordinate frame
@@ -35,6 +41,12 @@ for frame = frame0 + 1 : frame0 + max_frame
     elseif ds == 2
         img1 = rgb2gray(imread([path ...
             sprintf('/images/img_%05d.png',frame)]));
+    elseif ds == 3
+        img1 = imread([path ...
+            sprintf('/images_grey_undistorted_cropped/IMG_%04d.jpg',frame)]);
+    elseif ds == 4
+        img1 = imread([path ...
+            sprintf('/images_grey_undistorted/IMG_%04d.png',frame)]);
     end
     
     % Track
