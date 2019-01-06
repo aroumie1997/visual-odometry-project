@@ -13,6 +13,13 @@ The following requirements/recommendations are listed:
 * [KITTI Dataset](http://rpg.ifi.uzh.ch/docs/teaching/2016/kitti00.zip) (to test with KITTI dataset)
 * [Malaga dataset](http://rpg.ifi.uzh.ch/docs/teaching/2016/malaga-urban-dataset-extract-07.zip) (to test with Malaga dataset)
 
+**Note:** The [screencasts](https://www.youtube.com/watch?v=cCtPNocUxAY&list=PL2JXiKNHTFiWAf7BRZ2AMkTrQO0bqLYir) to test the pipeline on the different datasets were produced on the following machine:
+
+* **Processor:** 2.2 GHz Intel Core i7
+* **Memory:** 16 GB 2400 MHz DDR4
+* **Graphics:** Radeon Pro 555X 4096 MB/ Intel UHD Graphics 630 1536 MB
+* **Processor:** 2.2 GHz Intel Core i7
+* **Model:** MacBook Pro (15-inch, late 2018)
 
 ## Features
 
