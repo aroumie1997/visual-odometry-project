@@ -2,7 +2,7 @@
 clc;
 close all;
 clear all;
-ds = 4; % 0: KITTI, 1: Malaga, 2: parking, 3: custom-1
+ds = 0; % 0: KITTI, 1: Malaga, 2: parking
 % Screen size used to place plots
 screensize = get(groot, 'ScreenSize');
 screenwidth = screensize(3);
@@ -39,20 +39,6 @@ elseif ds == 2
      
     ground_truth = load([parking_path '/poses.txt']);
     ground_truth = ground_truth(:, [end-8 end]);
-elseif ds == 3
-    custom_path = '../../Custom Data Set Beirut/data';
-    assert(exist('custom_path', 'var') ~= 0);
-    last_frame = 2500;
-    K = load([custom_path '/K.txt']);
-    gps_xyz_mat = load('../code_plot_location/gps_xyz.mat');
-    gps_xyz_array = gps_xyz_mat.gps_xyz;
-elseif ds == 4
-    custom_path_2 = '../../Custom Data Set Beirut 2/data';
-    assert(exist('custom_path_2', 'var') ~= 0);
-    last_frame = 1700;
-    K = load([custom_path_2 '/K.txt']);
-    gps_xyz_mat = load('../code_plot_location/gps_xyz.mat');
-    gps_xyz_array = gps_xyz_mat.gps_xyz;
 else
     assert(false);
 end
@@ -66,16 +52,12 @@ elseif ds == 1
     path = malaga_path;
 elseif ds == 2
     path = parking_path;
-elseif ds == 3
-    path = custom_path;
-elseif ds == 4
-    path = custom_path_2;
 else
     assert(false);
 end
 
 frame0 = 1;
-if ds ~= 1 && ds~=3 && ds~=4
+if ds ~= 1
     translation = ground_truth(frame0,:);
     truth_translation = ground_truth(frame0,:);
 else
@@ -83,7 +65,8 @@ else
 end
 max_frame = 4;
 if ds ~= 1
-    [frame1, img1, S0, S1, Twc1] = bootstrapKLT(ds, path, [], frame0, max_frame, K);
+    [frame1, img1, S0, S1, Twc1] = bootstrapKLT_truthScale(...
+        ds, path, [], frame0, max_frame, K, ground_truth);
 else
     [frame1, img1, S0, S1, Twc1] = bootstrapKLT(ds, path, left_images, frame0, max_frame, K);
 end
@@ -120,7 +103,7 @@ if ds == 2
     ylim([-10 10]);
 end
 
-if ds ~= 1 && ds~=3 && ds~=4
+if ds ~= 1
     truth_translation = [truth_translation; ground_truth(frame1,:)];
     subplot(2,4,[7 8]);
     plot(truth_translation(:,1), truth_translation(:,2));
@@ -144,8 +127,6 @@ keyframe_keypoints = getKeypoints(keyframe_image, keyframe_S.keypoints);
 prev_keypoints = keyframe_keypoints;
 prev_image = keyframe_image;
 prev_num_tri_matches = 0;
-num_tracked_landmarks = [];
-
 for i = range
     fprintf('\n\nProcessing frame %d\n=====================\n', i);
     if ds == 0
@@ -157,12 +138,6 @@ for i = range
     elseif ds == 2
         image = im2uint8(rgb2gray(imread([parking_path ...
             sprintf('/images/img_%05d.png',i)])));
-    elseif ds == 3
-        image = imread([custom_path ...
-        sprintf('/images_grey_undistorted_cropped/IMG_%04d.jpg',i)]);
-    elseif ds == 4
-        image = imread([custom_path_2 ...
-        sprintf('/images_grey_undistorted/IMG_%04d.png',i)]);
     else
         assert(false);
     end
@@ -174,20 +149,15 @@ for i = range
     num_track_matches = size(keypoints, 2);
     fprintf('Number of tracking matches: %d\n=====================\n', num_track_matches);
     
-    num_tracked_landmarks = [num_tracked_landmarks size(keyframe_S.landmarks,2)];
-    
-    subplot(2,4,5)
-    if size(num_tracked_landmarks)<20
-        plot(-size(num_tracked_landmarks)+1:0, num_tracked_landmarks,'-xr');
-    else
-        plot(-19:0, num_tracked_landmarks(end-19:end),'-xr');
-    end 
-    xlim([-19 0]);
-    title('Number of tracked landmarks over last 20 frames');
-    
     % Triangulate
-    [tri_keyframe_S, tri_S, tri_Twc] = ransacTriangulationDistRatioKLT(...
-        keyframe_keypoints, keypoints, keyframe_Twc, K);
+    if ds ~= 1
+        [tri_keyframe_S, tri_S, tri_Twc] = ransacTriangulationDistRatioKLT_truthScale(...
+            keyframe_keypoints, keypoints, keyframe_Twc, K,...
+            ground_truth(keyframe,:), ground_truth(i,:));
+    else
+        [tri_keyframe_S, tri_S, tri_Twc] = ransacTriangulationDistRatioKLT(...
+            keyframe_keypoints, keypoints, keyframe_Twc, K);
+    end
     num_tri_matches = size(tri_S.keypoints, 2);
     fprintf('Number of triangulation matches %d\n=====================\n', num_tri_matches);
     
@@ -211,13 +181,13 @@ for i = range
         hold off;
         title('Triangulation Keyframes');
         
-%         subplot(2,4,[5 6])
-%         plot(prev_landmarks(1,:), prev_landmarks(3,:), 'o');
-%         hold on;
-%         plot(keyframe_S.landmarks(1,:), keyframe_S.landmarks(3,:), 'or');
-%         hold off;
-%         title('Landmarks');
-%         prev_landmarks = keyframe_S.landmarks;
+        subplot(2,4,[5 6])
+        plot(prev_landmarks(1,:), prev_landmarks(3,:), 'o');
+        hold on;
+        plot(keyframe_S.landmarks(1,:), keyframe_S.landmarks(3,:), 'or');
+        hold off;
+        title('Landmarks');
+        prev_landmarks = keyframe_S.landmarks;
         
         % Re-track with new selected keyframe
         keyframe_keypoints = getKeypoints(keyframe_image, keyframe_S.keypoints);
@@ -256,14 +226,14 @@ for i = range
 
     translation = [translation; loc_Twc(1,4) loc_Twc(3,4)];
 
-%     subplot(2,4,[3 4]);
-%     plot(translation(:,1), translation(:,2));
-%     title('Estimated Translation');
-%     if ds == 2
-%         ylim([-10 10]);
-%     end
+    subplot(2,4,[3 4]);
+    plot(translation(:,1), translation(:,2));
+    title('Estimated Translation');
+    if ds == 2
+        ylim([-10 10]);
+    end
 
-    if ds ~= 1 && ds~=3 && ds~=4
+    if ds ~= 1
         truth_translation = [truth_translation; ground_truth(i,:)];
         subplot(2,4,[7 8]);
         plot(truth_translation(:,1), truth_translation(:,2));
@@ -272,32 +242,6 @@ for i = range
             ylim([-10 10]);
         end
     end
-    
-    if ds == 4
-        subplot(2,4,6);
-        plot(-gps_xyz_array(:,2), gps_xyz_array(:,1));
-        hold on;
-        plot(translation(:,1), translation(:,2));
-        title('Global Trajectory');
-        legend('GPS data','Trajectory Estimate','location','northeast')
-        ylim([-10 250]);
-        axis('equal')
-        hold off;
-    end
-    
-    subplot(2,4,[3 4 7 8])
-    plot(keyframe_S.landmarks(1,:), keyframe_S.landmarks(3,:), 'o');
-    hold on;
-    if size(translation,1)<20
-        plot(translation(:,1), translation(:,2),'-xr');
-    else
-        plot(translation(end-19:end,1), translation(end-19:end,2),'-xr');
-    end 
-    hold off;
-    title('Trajectory of last 20 frames');
-    prev_landmarks = keyframe_S.landmarks;
-
-    
     
     % Makes sure that plots refresh.    
     pause(0.01);
