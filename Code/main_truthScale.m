@@ -12,7 +12,7 @@ addpath('EPnP');
 
 if ds == 0
     % need to set kitti_path to folder containing "00" and "poses"
-    kitti_path = '../../kitti';
+    kitti_path = '../kitti';
     assert(exist('kitti_path', 'var') ~= 0);
     ground_truth = load([kitti_path '/poses/00.txt']);
     ground_truth = ground_truth(:, [end-8 end]);
@@ -22,7 +22,7 @@ if ds == 0
         0 0 1];
 elseif ds == 1
     % Path containing the many files of Malaga 7.
-    malaga_path = '../../malaga-urban-dataset-extract-07';
+    malaga_path = '../malaga-urban-dataset-extract-07';
     assert(exist('malaga_path', 'var') ~= 0);
     images = dir([malaga_path ...
         '/malaga-urban-dataset-extract-07_rectified_800x600_Images']);
@@ -32,7 +32,7 @@ elseif ds == 1
         0 621.18428 309.05989
         0 0 1];
 elseif ds == 2
-    parking_path = '../../parking';
+    parking_path = '../parking';
     % Path containing images, depths and all...
     assert(exist('parking_path', 'var') ~= 0);
     last_frame = 598;
@@ -41,14 +41,14 @@ elseif ds == 2
     ground_truth = load([parking_path '/poses.txt']);
     ground_truth = ground_truth(:, [end-8 end]);
 elseif ds == 3
-    custom_path = '../../Custom Data Set Beirut/data';
+    custom_path = '../Custom Data Set Beirut/data';
     assert(exist('custom_path', 'var') ~= 0);
     last_frame = 2500;
     K = load([custom_path '/K.txt']);
     gps_xyz_mat = load('../code_plot_location/gps_xyz.mat');
     gps_xyz_array = gps_xyz_mat.gps_xyz;
 elseif ds == 4
-    custom_path_2 = '../../Custom Data Set Beirut 2/data';
+    custom_path_2 = '../Custom Data Set Beirut 2/data';
     assert(exist('custom_path_2', 'var') ~= 0);
     last_frame = 1700;
     K = load([custom_path_2 '/K.txt']);
