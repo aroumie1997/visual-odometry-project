@@ -2,7 +2,8 @@
 clc;
 close all;
 clear all;
-ds = 0; % 0: KITTI, 1: Malaga, 2: parking
+
+ds = input('Please enter the dataset number (0: KITTI, 1: Malaga, 2: parking, 3: custom-1, 4: custom_2): ');
 % Screen size used to place plots
 screensize = get(groot, 'ScreenSize');
 screenwidth = screensize(3);
@@ -11,7 +12,7 @@ addpath('EPnP');
 
 if ds == 0
     % need to set kitti_path to folder containing "00" and "poses"
-    kitti_path = '../kitti';
+    kitti_path = '../../kitti';
     assert(exist('kitti_path', 'var') ~= 0);
     ground_truth = load([kitti_path '/poses/00.txt']);
     ground_truth = ground_truth(:, [end-8 end]);
@@ -21,7 +22,7 @@ if ds == 0
         0 0 1];
 elseif ds == 1
     % Path containing the many files of Malaga 7.
-    malaga_path = '../malaga-urban-dataset-extract-07';
+    malaga_path = '../../malaga-urban-dataset-extract-07';
     assert(exist('malaga_path', 'var') ~= 0);
     images = dir([malaga_path ...
         '/malaga-urban-dataset-extract-07_rectified_800x600_Images']);
@@ -31,7 +32,7 @@ elseif ds == 1
         0 621.18428 309.05989
         0 0 1];
 elseif ds == 2
-    parking_path = '../parking';
+    parking_path = '../../parking';
     % Path containing images, depths and all...
     assert(exist('parking_path', 'var') ~= 0);
     last_frame = 598;
@@ -39,6 +40,20 @@ elseif ds == 2
      
     ground_truth = load([parking_path '/poses.txt']);
     ground_truth = ground_truth(:, [end-8 end]);
+elseif ds == 3
+    custom_path = '../../Custom Data Set Beirut/data';
+    assert(exist('custom_path', 'var') ~= 0);
+    last_frame = 2500;
+    K = load([custom_path '/K.txt']);
+    gps_xyz_mat = load('../code_plot_location/gps_xyz.mat');
+    gps_xyz_array = gps_xyz_mat.gps_xyz;
+elseif ds == 4
+    custom_path_2 = '../../Custom Data Set Beirut 2/data';
+    assert(exist('custom_path_2', 'var') ~= 0);
+    last_frame = 1700;
+    K = load([custom_path_2 '/K.txt']);
+    gps_xyz_mat = load('../code_plot_location/gps_xyz.mat');
+    gps_xyz_array = gps_xyz_mat.gps_xyz;    
 else
     assert(false);
 end
@@ -52,12 +67,16 @@ elseif ds == 1
     path = malaga_path;
 elseif ds == 2
     path = parking_path;
+elseif ds == 3
+    path = custom_path;
+elseif ds == 4
+    path = custom_path_2;
 else
     assert(false);
 end
 
 frame0 = 1;
-if ds ~= 1
+if ds ~= 1 && ds~=3 && ds~=4
     translation = ground_truth(frame0,:);
     truth_translation = ground_truth(frame0,:);
 else
@@ -103,7 +122,7 @@ if ds == 2
     ylim([-10 10]);
 end
 
-if ds ~= 1
+if ds ~= 1 && ds~=3 && ds~=4
     truth_translation = [truth_translation; ground_truth(frame1,:)];
     subplot(2,4,[7 8]);
     plot(truth_translation(:,1), truth_translation(:,2));
@@ -127,6 +146,10 @@ keyframe_keypoints = getKeypoints(keyframe_image, keyframe_S.keypoints);
 prev_keypoints = keyframe_keypoints;
 prev_image = keyframe_image;
 prev_num_tri_matches = 0;
+num_tracked_landmarks = [];
+line_width = 2;
+font_size = 18;
+
 for i = range
     fprintf('\n\nProcessing frame %d\n=====================\n', i);
     if ds == 0
@@ -138,6 +161,12 @@ for i = range
     elseif ds == 2
         image = im2uint8(rgb2gray(imread([parking_path ...
             sprintf('/images/img_%05d.png',i)])));
+    elseif ds == 3
+        image = imread([custom_path ...
+        sprintf('/images_grey_undistorted_cropped/IMG_%04d.jpg',i)]);
+    elseif ds == 4
+        image = imread([custom_path_2 ...
+        sprintf('/images_grey_undistorted/IMG_%04d.png',i)]);
     else
         assert(false);
     end
@@ -149,8 +178,19 @@ for i = range
     num_track_matches = size(keypoints, 2);
     fprintf('Number of tracking matches: %d\n=====================\n', num_track_matches);
     
+    num_tracked_landmarks = [num_tracked_landmarks size(keyframe_S.landmarks,2)];
+
+    subplot(2,4,5)
+    if size(num_tracked_landmarks)<20
+        plot(-size(num_tracked_landmarks)+1:0, num_tracked_landmarks,'-xr','Linewidth', line_width);
+    else
+        plot(-19:0, num_tracked_landmarks(end-19:end),'-xr','Linewidth', line_width);
+    end 
+    xlim([-19 0]);
+    title('Number of tracked landmarks over last 20 frames','fontsize', font_size-4);
+    
     % Triangulate
-    if ds ~= 1
+    if ds ~= 1 && ds ~= 3 && ds ~= 4
         [tri_keyframe_S, tri_S, tri_Twc] = ransacTriangulationDistRatioKLT_truthScale(...
             keyframe_keypoints, keypoints, keyframe_Twc, K,...
             ground_truth(keyframe,:), ground_truth(i,:));
@@ -179,15 +219,15 @@ for i = range
         matches = 1 : size(keyframe_S.keypoints, 2);
         plotMatches(matches, keyframe_S.keypoints, prev_keyframe_S.keypoints);
         hold off;
-        title('Triangulation Keyframes');
-        
-        subplot(2,4,[5 6])
-        plot(prev_landmarks(1,:), prev_landmarks(3,:), 'o');
-        hold on;
-        plot(keyframe_S.landmarks(1,:), keyframe_S.landmarks(3,:), 'or');
-        hold off;
-        title('Landmarks');
-        prev_landmarks = keyframe_S.landmarks;
+        title('Triangulation Keyframes','fontsize', font_size);
+%         
+%         subplot(2,4,[5 6])
+%         plot(prev_landmarks(1,:), prev_landmarks(3,:), 'o');
+%         hold on;
+%         plot(keyframe_S.landmarks(1,:), keyframe_S.landmarks(3,:), 'or');
+%         hold off;
+%         title('Landmarks');
+%         prev_landmarks = keyframe_S.landmarks;
         
         % Re-track with new selected keyframe
         keyframe_keypoints = getKeypoints(keyframe_image, keyframe_S.keypoints);
@@ -222,27 +262,75 @@ for i = range
     matches = 1 : num_loc_matches;
     plotMatches(matches, loc_S.keypoints, loc_keyframe_S.keypoints);
     hold off;
-    title('Localization Frames');
+    title('Localization Frames','fontsize', font_size);
 
     translation = [translation; loc_Twc(1,4) loc_Twc(3,4)];
 
-    subplot(2,4,[3 4]);
-    plot(translation(:,1), translation(:,2));
-    title('Estimated Translation');
-    if ds == 2
-        ylim([-10 10]);
-    end
+%     subplot(2,4,[3 4]);
+%     plot(translation(:,1), translation(:,2));
+%     title('Estimated Translation');
+%     if ds == 2
+%         ylim([-10 10]);
+%     end
 
-    if ds ~= 1
+%     if ds ~= 1
+%         truth_translation = [truth_translation; ground_truth(i,:)];
+%         subplot(2,4,[7 8]);
+%         plot(truth_translation(:,1), truth_translation(:,2));
+%         title('True Translation');
+%         if ds == 2
+%             ylim([-10 10]);
+%         end
+%     end
+
+
+    if ds ~= 1 && ds~=3 && ds~=4
         truth_translation = [truth_translation; ground_truth(i,:)];
-        subplot(2,4,[7 8]);
-        plot(truth_translation(:,1), truth_translation(:,2));
-        title('True Translation');
+        subplot(2,4,6);
+        plot(truth_translation(:,1), truth_translation(:,2),'Linewidth', line_width);
+        hold on;
+        plot(translation(:,1), translation(:,2),'Linewidth', line_width);
+        hold off;
+        title('Global Trajectory','fontsize', font_size);
+        legend({'Ground truth','Trajectory Estimate'},'fontsize',14,'location','northeast')
         if ds == 2
             ylim([-10 10]);
         end
     end
     
+    if ds == 1 
+    subplot(2,4,6);
+    plot(translation(:,1), translation(:,2),'Linewidth', line_width);
+    title('Global Trajectory Estimate','fontsize', font_size);
+    if ds == 2
+        ylim([-10 10]);
+    end
+    
+    end
+    if ds == 4
+        subplot(2,4,6);
+        plot(-gps_xyz_array(:,2), gps_xyz_array(:,1),'Linewidth', line_width);
+        hold on;
+        plot(translation(:,1), translation(:,2),'Linewidth', line_width);
+        title('Global Trajectory','fontsize', font_size);
+        legend({'GPS data','Trajectory Estimate'},'fontsize',14,'location','northeast')
+        ylim([-10 250]);
+        axis equal
+        hold off;
+    end
+    
+    subplot(2,4,[3 4 7 8])
+    plot(keyframe_S.landmarks(1,:), keyframe_S.landmarks(3,:), 'o');
+    hold on;
+    if size(translation,1)<20
+        plot(translation(:,1), translation(:,2),'-xr');
+    else
+        plot(translation(end-19:end,1), translation(end-19:end,2),'-xr');
+    end 
+    axis equal
+    hold off;
+    title('Trajectory of last 20 frames','fontsize', font_size);
+    prev_landmarks = keyframe_S.landmarks;
     % Makes sure that plots refresh.    
     pause(0.01);
 end

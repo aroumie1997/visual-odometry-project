@@ -13,7 +13,7 @@ addpath('EPnP');
 
 if ds == 0
     % need to set kitti_path to folder containing "00" and "poses"
-    kitti_path = '../kitti';
+    kitti_path = '../../kitti';
     assert(exist('kitti_path', 'var') ~= 0);
     ground_truth = load([kitti_path '/poses/00.txt']);
     ground_truth = ground_truth(:, [end-8 end]);
@@ -23,7 +23,7 @@ if ds == 0
         0 0 1];
 elseif ds == 1
     % Path containing the many files of Malaga 7.
-    malaga_path = '../malaga-urban-dataset-extract-07';
+    malaga_path = '../../malaga-urban-dataset-extract-07';
     assert(exist('malaga_path', 'var') ~= 0);
     images = dir([malaga_path ...
         '/malaga-urban-dataset-extract-07_rectified_800x600_Images']);
@@ -33,7 +33,7 @@ elseif ds == 1
         0 621.18428 309.05989
         0 0 1];
 elseif ds == 2
-    parking_path = '../parking';
+    parking_path = '../../parking';
     % Path containing images, depths and all...
     assert(exist('parking_path', 'var') ~= 0);
     last_frame = 598;
@@ -147,6 +147,8 @@ prev_keypoints = keyframe_keypoints;
 prev_image = keyframe_image;
 prev_num_tri_matches = 0;
 num_tracked_landmarks = [];
+line_width = 2;
+font_size = 18;
 
 for i = range
     fprintf('\n\nProcessing frame %d\n=====================\n', i);
@@ -180,12 +182,12 @@ for i = range
     
     subplot(2,4,5)
     if size(num_tracked_landmarks)<20
-        plot(-size(num_tracked_landmarks)+1:0, num_tracked_landmarks,'-xr');
+        plot(-size(num_tracked_landmarks)+1:0, num_tracked_landmarks,'-xr','Linewidth', line_width);
     else
-        plot(-19:0, num_tracked_landmarks(end-19:end),'-xr');
+        plot(-19:0, num_tracked_landmarks(end-19:end),'-xr','Linewidth', line_width);
     end 
     xlim([-19 0]);
-    title('Number of tracked landmarks over last 20 frames');
+    title('Number of tracked landmarks over last 20 frames','fontsize', font_size-4);
     
     % Triangulate
     [tri_keyframe_S, tri_S, tri_Twc] = ransacTriangulationDistRatioKLT(...
@@ -211,7 +213,7 @@ for i = range
         matches = 1 : size(keyframe_S.keypoints, 2);
         plotMatches(matches, keyframe_S.keypoints, prev_keyframe_S.keypoints);
         hold off;
-        title('Triangulation Keyframes');
+        title('Triangulation Keyframes','fontsize', font_size);
         
 %         subplot(2,4,[5 6])
 %         plot(prev_landmarks(1,:), prev_landmarks(3,:), 'o');
@@ -254,7 +256,7 @@ for i = range
     matches = 1 : num_loc_matches;
     plotMatches(matches, loc_S.keypoints, loc_keyframe_S.keypoints);
     hold off;
-    title('Localization Frames');
+    title('Localization Frames','fontsize', font_size);
 
     translation = [translation; loc_Twc(1,4) loc_Twc(3,4)];
 
@@ -267,23 +269,36 @@ for i = range
 
     if ds ~= 1 && ds~=3 && ds~=4
         truth_translation = [truth_translation; ground_truth(i,:)];
-        subplot(2,4,[7 8]);
-        plot(truth_translation(:,1), truth_translation(:,2));
-        title('True Translation');
+        subplot(2,4,6);
+        plot(truth_translation(:,1), truth_translation(:,2),'Linewidth', line_width);
+        hold on;
+        plot(translation(:,1), translation(:,2),'Linewidth', line_width);
+        hold off;
+        title('Global Trajectory','fontsize', font_size);
+        legend({'Ground truth','Trajectory Estimate'},'fontsize',14,'location','northeast')
         if ds == 2
             ylim([-10 10]);
         end
     end
     
+    if ds == 1 
+    subplot(2,4,6);
+    plot(translation(:,1), translation(:,2),'Linewidth', line_width);
+    title('Global Trajectory Estimate','fontsize', font_size);
+    if ds == 2
+        ylim([-10 10]);
+    end
+    
+    end
     if ds == 4
         subplot(2,4,6);
-        plot(-gps_xyz_array(:,2), gps_xyz_array(:,1));
+        plot(-gps_xyz_array(:,2), gps_xyz_array(:,1),'Linewidth', line_width);
         hold on;
-        plot(translation(:,1), translation(:,2));
-        title('Global Trajectory');
-        legend('GPS data','Trajectory Estimate','location','northeast')
+        plot(translation(:,1), translation(:,2),'Linewidth', line_width);
+        title('Global Trajectory','fontsize', font_size);
+        legend({'GPS data','Trajectory Estimate'},'fontsize',14,'location','northeast')
         ylim([-10 250]);
-        axis('equal')
+        axis equal
         hold off;
     end
     
@@ -295,11 +310,11 @@ for i = range
     else
         plot(translation(end-19:end,1), translation(end-19:end,2),'-xr');
     end 
+    axis equal
     hold off;
-    title('Trajectory of last 20 frames');
+    title('Trajectory of last 20 frames','fontsize', font_size);
     prev_landmarks = keyframe_S.landmarks;
 
-    
     
     % Makes sure that plots refresh.    
     pause(0.01);
