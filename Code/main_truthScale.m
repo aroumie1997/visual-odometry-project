@@ -202,7 +202,7 @@ for i = range
     fprintf('Number of triangulation matches %d\n=====================\n', num_tri_matches);
     
     % Update keyframe
-    if num_tri_matches < prev_num_tri_matches
+    if num_tri_matches < prev_num_tri_matches && num_tri_matches > 30
         keyframe = i - 1;
         fprintf('New keyframe %d selected\n=====================\n', keyframe);
         keyframe_image = prev_image;
@@ -254,7 +254,12 @@ for i = range
     num_loc_matches = size(loc_S.keypoints, 2);
     fprintf('Number of localization matches %d\n=====================\n', num_loc_matches);
 
-    assert(num_loc_matches > 0);
+    if num_loc_matches == 0
+        loc_keyframe_S = tri_keyframe_S;
+        loc_S = tri_S;
+        loc_Twc = tri_Twc;
+    end
+%     assert(num_loc_matches > 0);
 
     subplot(2,4,2);
     imshow(image);
