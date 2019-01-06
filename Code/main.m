@@ -2,7 +2,9 @@
 clc;
 close all;
 clear all;
-ds = 4; % 0: KITTI, 1: Malaga, 2: parking, 3: custom-1
+
+ds = input('Please enter the dataset number (0: KITTI, 1: Malaga, 2: parking, 3: custom-1, 4: custom_2): ');
+% ds = 4; % 0: KITTI, 1: Malaga, 2: parking, 3: custom-1, 4: custom_2
 % Screen size used to place plots
 screensize = get(groot, 'ScreenSize');
 screenwidth = screensize(3);
